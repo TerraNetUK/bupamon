@@ -134,17 +134,21 @@ func main() {
 				// Add to tracker
 				stats.tracker.Add(current)
 
-				// Update absolute minimum
+				// Update absolute minimum and maximum
 				if stats.absoluteMinimum < 0 || current < stats.absoluteMinimum {
 					stats.absoluteMinimum = current
+				}
+				if stats.absoluteMaximum < 0 || current > stats.absoluteMaximum {
+					stats.absoluteMaximum = current
 				}
 
 				// Create a point for InfluxDB
 				fields := map[string]interface{}{
 					"current_ms":      current,
-					"fping_avg_ms":    fpingAvg,
+					"fping_avg_ms":    fpingAvg, // fping's own running average
 					"absolute_min_ms": stats.absoluteMinimum,
-					"loss_pct":        loss,
+					"absolute_max_ms": stats.absoluteMaximum,
+					"loss_pct":        loss, // fping's packet loss percentage
 				}
 
 				// Add rolling stats for each window size
@@ -190,9 +194,9 @@ func main() {
 
 			if len(matches) >= 5 {
 				target := matches[1]
-				minVal, _ := strconv.ParseFloat(matches[2], 64)
-				avgVal, _ := strconv.ParseFloat(matches[3], 64)
-				maxVal, _ := strconv.ParseFloat(matches[4], 64)
+				fpingMin, _ := strconv.ParseFloat(matches[2], 64) // fping's min value
+				fpingAvg, _ := strconv.ParseFloat(matches[3], 64) // fping's avg value
+				fpingMax, _ := strconv.ParseFloat(matches[4], 64) // fping's max value
 
 				// Create a summary point
 				point := influxdb2.NewPoint(
@@ -202,9 +206,9 @@ func main() {
 						"target": target,
 					},
 					map[string]interface{}{
-						"min_ms": minVal,
-						"avg_ms": avgVal,
-						"max_ms": maxVal,
+						"fping_min_ms": fpingMin, // Renamed to clarify these are fping's own calculations
+						"fping_avg_ms": fpingAvg,
+						"fping_max_ms": fpingMax,
 					},
 					time.Now(),
 				)
@@ -213,8 +217,8 @@ func main() {
 				writeAPI.WritePoint(point)
 
 				if config.Logging.Enabled {
-					logger.Printf("Summary - Target: %s, Min: %.2f ms, Avg: %.2f ms, Max: %.2f ms",
-						target, minVal, avgVal, maxVal)
+					logger.Printf("Summary - Target: %s, fping Min: %.2f ms, fping Avg: %.2f ms, fping Max: %.2f ms",
+						target, fpingMin, fpingAvg, fpingMax)
 				}
 			}
 		}

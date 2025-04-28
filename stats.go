@@ -105,4 +105,5 @@ func (r *RollingStatsTracker) cleanup(now time.Time, window time.Duration) {
 type TargetStats struct {
 	tracker         *RollingStatsTracker
 	absoluteMinimum float64
+	absoluteMaximum float64
 }
