@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 // Helper functions to calculate statistics
 func findMin(values []float64) float64 {
 	if len(values) == 0 {
@@ -36,4 +38,9 @@ func calculateAvg(values []float64) float64 {
 		sum += v
 	}
 	return sum / float64(len(values))
+}
+
+// Convert duration to seconds for field naming
+func durationToSeconds(d time.Duration) int64 {
+	return int64(d.Seconds())
 }
