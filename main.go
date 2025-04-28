@@ -73,9 +73,16 @@ func main() {
 	}
 
 	// Set up InfluxDB client
-	influxURL := fmt.Sprintf("http://%s:%d", config.InfluxDB.Host, config.InfluxDB.Port)
-	client := influxdb2.NewClient(influxURL, config.InfluxDB.Token)
+	options := influxdb2.DefaultOptions()
+	options.SetBatchSize(20)       // Reduce batch size
+	options.SetRetryInterval(5000) // Retry every 5 seconds
+	options.SetMaxRetries(5)       // Retry 5 times
+	options.SetLogLevel(3)         // More verbose logging
+
+	influxURL := fmt.Sprintf("https://%s:%d", config.InfluxDB.Host, config.InfluxDB.Port)
+	client := influxdb2.NewClientWithOptions(influxURL, config.InfluxDB.Token, options)
 	defer client.Close()
+
 	writeAPI := client.WriteAPI(config.InfluxDB.Org, config.InfluxDB.Bucket)
 
 	// Regex for parsing fping output
