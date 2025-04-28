@@ -2,9 +2,11 @@ package main
 
 import (
 	"bufio"
+	"crypto/tls"
 	"fmt"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -72,12 +74,22 @@ func main() {
 		}
 	}
 
-	// Set up InfluxDB client
+	// Set up InfluxDB client with TLS verification disabled
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true, // Disable certificate verification
+			},
+		},
+	}
+
+	// Create InfluxDB client options
 	options := influxdb2.DefaultOptions()
-	options.SetBatchSize(20)       // Reduce batch size
-	options.SetRetryInterval(5000) // Retry every 5 seconds
-	options.SetMaxRetries(5)       // Retry 5 times
-	options.SetLogLevel(3)         // More verbose logging
+	options.SetBatchSize(20)          // Reduce batch size
+	options.SetRetryInterval(5000)    // Retry every 5 seconds
+	options.SetMaxRetries(5)          // Retry 5 times
+	options.SetLogLevel(3)            // More verbose logging
+	options.SetHTTPClient(httpClient) // Use our custom HTTP client
 
 	influxURL := fmt.Sprintf("https://%s:%d", config.InfluxDB.Host, config.InfluxDB.Port)
 	client := influxdb2.NewClientWithOptions(influxURL, config.InfluxDB.Token, options)
