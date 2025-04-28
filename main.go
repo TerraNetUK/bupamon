@@ -172,10 +172,10 @@ func main() {
 
 				// Add rolling stats for each window size
 				for _, window := range windowSizes {
-					windowStr := window.String()
-					fields[fmt.Sprintf("min_%s_ms", windowStr)] = stats.tracker.GetStat(MinStat, window)
-					fields[fmt.Sprintf("max_%s_ms", windowStr)] = stats.tracker.GetStat(MaxStat, window)
-					fields[fmt.Sprintf("avg_%s_ms", windowStr)] = stats.tracker.GetStat(AvgStat, window)
+					windowSecs := durationToSeconds(window)
+					fields[fmt.Sprintf("min_%s_ms", windowSecs)] = stats.tracker.GetStat(MinStat, window)
+					fields[fmt.Sprintf("max_%s_ms", windowSecs)] = stats.tracker.GetStat(MaxStat, window)
+					fields[fmt.Sprintf("avg_%s_ms", windowSecs)] = stats.tracker.GetStat(AvgStat, window)
 				}
 
 				point := influxdb2.NewPoint(
@@ -191,10 +191,19 @@ func main() {
 				// Write to InfluxDB
 				writeAPI.WritePoint(point)
 
-				// Log output (if verbose)
 				if config.Logging.Enabled {
 					logger.Printf("Target: %s, Current: %.2f ms, Absolute Min: %.2f ms",
 						target, current, stats.absoluteMinimum)
+					for _, window := range windowSizes {
+						windowSecs := durationToSeconds(window)
+						minVal := stats.tracker.GetStat(MinStat, window)
+						maxVal := stats.tracker.GetStat(MaxStat, window)
+						avgVal := stats.tracker.GetStat(AvgStat, window)
+
+						// Use human-readable format in logs
+						logger.Printf("  %v window (%ds) - Min: %.2f ms, Avg: %.2f ms, Max: %.2f ms",
+							window, windowSecs, minVal, avgVal, maxVal)
+					}
 				}
 			}
 		}
