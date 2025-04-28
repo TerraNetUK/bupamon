@@ -1,0 +1,40 @@
+bupamon:
+  # Configurable source host identifier
+  source_host: "actaeus"
+  window_sizes:
+    - 10s
+    - 1m
+    - 5m
+    - 10m
+    - 1hr
+
+logging:
+  enabled: true
+  logfile: ./infping.log
+
+influxdb:
+  host: 192.168.0.1
+  port: 8086
+  org: acme
+  bucket: BupaMon
+  measurement: fping
+  token: "<InfluxDB v2 API Token>"
+
+fping:
+  path: "/usr/bin/fping"
+  # List of command line arguments to provide to fping
+  args:
+    -D 
+    -N
+    -l
+    -p 1000
+    -M
+    -e
+    -N
+
+targets:
+  hosts:
+    - 192.168.0.2
+    - 192.168.0.3
+  # If a file is specified then parse and add to the target list
+  file: "./targets.txt"
