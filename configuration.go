@@ -15,6 +15,7 @@ type Config struct {
 	BupaMon struct {
 		WindowSizes []string `yaml:"window_sizes"`
 		SourceHost  string   `yaml:"source_host"`
+		WorkingDir  string   `yaml:"working_dir"`
 	} `yaml:"bupamon"`
 
 	Logging struct {
@@ -32,8 +33,10 @@ type Config struct {
 	} `yaml:"influxdb"`
 
 	FPing struct {
-		Path string   `yaml:"path"`
-		Args []string `yaml:"args"`
+		Path                 string   `yaml:"path"`
+		Args                 []string `yaml:"args"`
+		RestartThreshold     int      `yaml:"restart_threshold"`     // Packet loss percentage that triggers restart
+		ConsecutiveThreshold int      `yaml:"consecutive_threshold"` // Number of consecutive high loss readings
 	} `yaml:"fping"`
 
 	Targets struct {

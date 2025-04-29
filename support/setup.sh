@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# Install golang
+
+
 # Print work dir
 pwd="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
