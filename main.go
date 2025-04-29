@@ -191,6 +191,7 @@ func main() {
 				// Write to InfluxDB
 				writeAPI.WritePoint(point)
 
+				// Log output (if verbose)
 				if config.Logging.Enabled {
 					logger.Printf("Target: %s, Current: %.2f ms, Absolute Min: %.2f ms",
 						target, current, stats.absoluteMinimum)
