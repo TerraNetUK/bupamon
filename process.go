@@ -41,6 +41,7 @@ func NewProcessManager(config *Config, logger *log.Logger, apiClient influxdb2.C
 		if err != nil {
 			logger.Fatalf("Invalid window size: %s - %v", ws, err)
 		}
+		logger.Printf("Target window size: %s", ws)
 		windowSizes = append(windowSizes, d)
 	}
 
@@ -58,14 +59,15 @@ func NewProcessManager(config *Config, logger *log.Logger, apiClient influxdb2.C
 	// Initialize stats for each target
 	targetStats := make(map[string]*TargetStats)
 	for _, target := range targets {
+		logger.Printf("Target stats for: %s", target)
 		targetStats[target] = &TargetStats{
 			tracker:         NewRollingStatsTracker(windowSizes),
 			absoluteMinimum: -1,
 		}
 	}
 
-	logger.Printf("Monitoring %d targets with %d window sizes from source '%s'",
-		len(targets), len(windowSizes), config.BupaMon.SourceHost)
+	logger.Printf("Monitoring %d targets with %d window sizes from source '%s'", len(targets), len(windowSizes), config.BupaMon.SourceHost)
+
 	return &ProcessManager{
 		config:      config,
 		logger:      logger,
@@ -82,7 +84,6 @@ func (pm *ProcessManager) Start() error {
 	// Prepare fping command
 	args := append(pm.config.FPing.Args, pm.getTargets()...)
 	pm.cmd = exec.CommandContext(pm.ctx, pm.config.FPing.Path, args...)
-	pm.logger.Printf("Starting fping with args: %v", args)
 
 	// Set the working directory if specified
 	if pm.config.BupaMon.WorkingDir != "" {
@@ -103,14 +104,17 @@ func (pm *ProcessManager) Start() error {
 
 	// Start the command
 	pm.logger.Printf("Starting fping with args: %v", args)
+
 	err = pm.cmd.Start()
 	if err != nil {
 		return fmt.Errorf("error starting fping: %v", err)
 	}
 
+	pm.logger.Printf("Processing fping stdout")
 	// Process stdout for regular pings
 	go pm.processStdout()
 
+	pm.logger.Printf("Processing fping stderr")
 	// Process stderr for summary statistics
 	go pm.processStderr()
 
@@ -137,7 +141,7 @@ func (pm *ProcessManager) getTargets() []string {
 // Process stdout for regular pings
 func (pm *ProcessManager) processStdout() {
 	// Use the regex for parsing fping output
-	re := regexp.MustCompile(`\[(\d+\.\d+)\] ([0-9.]+)\s+: \[\d+], \d+ bytes, ([0-9.]+) ms \(([0-9.]+) avg, (\d+)% loss\)`)
+	re := regexp.MustCompile(`\[(\d+\.\d+)] ([0-9.]+)\s+: \[\d+], \d+ bytes, ([0-9.]+) ms \(([0-9.]+) avg, (\d+)% loss\)`)
 	//re := regexp.MustCompile(`\[(\d+\.\d+)] ([0-9.]+)\s+: \[\d+], \d+ bytes, ([0-9.]+) ms \(([0-9.]+) avg, (\d+)% loss\)`)
 
 	writeAPI := pm.client.WriteAPI(pm.config.InfluxDB.Org, pm.config.InfluxDB.Bucket)
