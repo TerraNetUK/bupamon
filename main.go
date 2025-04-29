@@ -71,11 +71,11 @@ func main() {
 	// Set up signal handling for graceful shutdown
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
 	go func() {
 		<-sigs
 		logger.Println("Received shutdown signal, stopping fping and flushing writes...")
 		processManager.Stop()
+		client.Close()
 		os.Exit(0)
 	}()
 
@@ -83,4 +83,7 @@ func main() {
 	if err := processManager.Start(); err != nil {
 		logger.Fatalf("Failed to start fping: %v", err)
 	}
+
+	// Wait indefinitely
+	select {}
 }
