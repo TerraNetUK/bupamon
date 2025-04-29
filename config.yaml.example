@@ -1,6 +1,8 @@
 bupamon:
   # Configurable source host identifier
   source_host: "actaeus"
+  restart_threshold: 30  # Restart if packet loss is 30% or higher
+  consecutive_threshold: 3  # Need 3 consecutive high-loss readings to trigger restart
   window_sizes:
     - 10s
     - 1m
